@@ -1,8 +1,3 @@
-/**
- * @fileoverview Teleprompter App Mock
- * @description 修复网络请求，欺骗 App 保存成功
- */
-
 let req = {};
 let title = "Draft Script";
 let text = "Content saved via QX Mock";
