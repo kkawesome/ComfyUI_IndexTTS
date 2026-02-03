@@ -1,78 +1,43 @@
-// Quantumult X Mock for Teleprompter Save API
-// 拦截 POST https://api.teleprompterapp.com/
+/**
+ * Quantumult X Mock - 盲人拦截版
+ * 修复：遇到大文件上传导致 JSON 解析失败时，不再放行，而是依旧强制返回成功。
+ */
 
-// 1. 确保只处理POST请求
-if ($request.method !== 'POST') {
-    console.log(`⚠️ Mock skipped: Not a POST request (${$request.method})`);
-    $done($request);
-    return;
-}
-
-// 2. 默认值
-let req = {};
-let title = "Draft Script";
-let text = "Content saved via QX Mock";
-let userId = 0;
-
-// 3. 安全解析Body
-try {
-    if ($request.body) {
-        req = JSON.parse($request.body);
-        console.log(`📝 Parsed request: script="${req.script}", user_id=${req.user_id}`);
-        
-        if (req.script === 'add') {
-            title = req.title || title;
-            text = req.text || text;
-            userId = req.user_id || userId;
-        } else {
-            console.log(`⚠️ Not a script add request: ${JSON.stringify(req)}`);
-            $done($request);
-            return;
-        }
-    } else {
-        console.log('⚠️ No body in request');
-        $done($request);
-        return;
-    }
-} catch (e) {
-    console.log(`❌ Parse error: ${e.message}`);
-    $done($request);
-    return;
-}
-
-// 4. 生成模拟数据
-const mockId = Math.floor(Math.random() * 90000000) + 10000000;
+const mockId = 99999999;
 const now = new Date();
-
-// 重要！使用原响应完全相同的格式: "2026-02-03 04:48:17"
 const pad = (n) => n.toString().padStart(2, '0');
+// 构造 App 喜欢的时间格式
 const timeString = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
 
-// 5. 构造响应（尽量接近原始格式）
+// 构造一个“万能”的成功响应
+// 不管 App 发什么，我们都回这一段
 const responseBody = {
     "status": 1,
     "script": {
         "id": mockId,
-        "title": title,
-        "script": text,
-        "user_id": userId,
+        "title": "Local Mock Script", // 甚至懒得读取原来的标题
+        "script": "Content saved locally (Mock)", 
+        "user_id": 0,
         "created_at": timeString,
         "updated_at": null
     }
 };
 
-console.log(`✅ Mock response generated: ID=${mockId}, Title="${title}"`);
+const headers = {
+    "Content-Type": "application/json",
+    "Connection": "keep-alive",
+    "Date": now.toUTCString(),
+    "Server": "QX-Mock",
+    "Content-Length": JSON.stringify(responseBody).length.toString()
+};
 
-// 6. 返回响应（注意：原响应头很关键）
+// 【核心修改】
+// 没有任何 if 判断，没有任何 JSON.parse
+// 只要请求撞到枪口上，直接拦截，返回 200 OK
+console.log("🛑 Mock 拦截生效：已阻止上传，直接返回成功。");
+
 $done({
     status: 200,
-    headers: {
-        "Content-Type": "application/json",
-        "Content-Length": JSON.stringify(responseBody).length.toString(),
-        "Connection": "keep-alive",
-        "Date": now.toUTCString(),
-        "Server": "nginx/1.18.0",  // 猜测服务器类型，原响应没显示
-        "X-Powered-By": "QuantumultX Mock"
-    },
+    headers: headers,
     body: JSON.stringify(responseBody)
 });
