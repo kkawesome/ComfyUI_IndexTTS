@@ -1,42 +1,47 @@
 /**
- * Quantumult X Mock - 最终完美版
- * Fix: 使用 response 字段包裹，确保不连接服务器，直接本地返回。
+ * Teleprompter App - Mock 响应脚本
+ * 用于 Quantumult X / Surge / Loon
  */
 
-// 1. 构造 Mock 数据
 const mockId = 88888888;
 const now = new Date();
 const pad = (n) => n.toString().padStart(2, '0');
 const timeString = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
 
-const responseBody = {
+// 构造 Mock 数据
+const mockData = {
     "status": 1,
     "script": {
         "id": mockId,
-        "title": "Final Mock Script",
-        "script": "Saved successfully via Quantumult X",
+        "title": "Premium Unlocked",
+        "script": "Saved successfully via Quantumult X Mock",
         "user_id": 0,
         "created_at": timeString,
-        "updated_at": null
+        "updated_at": timeString,
+        "is_premium": true,
+        "expires_at": "2099-12-31 23:59:59"
     }
 };
 
+// 标准响应头
 const headers = {
     "Content-Type": "application/json",
     "Connection": "keep-alive",
     "Date": now.toUTCString(),
-    "Server": "QX-Mock",
-    "Access-Control-Allow-Origin": "*"
+    "Server": "QX-Mock-Server",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "X-Mocked-By": "Quantumult-X"
 };
 
-console.log("✅ Mock 拦截成功：已构造虚拟响应返回 App");
+console.log(`[Mock] 拦截请求: ${$request.url}`);
+console.log(`[Mock] 返回虚拟数据，ID: ${mockId}`);
 
-// 2. 核心修正：必须用 response 包裹！
-// 这样 QX 才知道这是“回信”，而不是“去信”
+// Quantumult X 标准响应格式
 $done({
     response: {
         status: 200,
         headers: headers,
-        body: JSON.stringify(responseBody)
+        body: JSON.stringify(mockData)
     }
 });
